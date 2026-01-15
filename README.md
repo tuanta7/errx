@@ -44,13 +44,23 @@ go get github.com/tuanta7/errx
 
 ## Usage
 
-### 1. Register Messages (on startup)
+### 1. Register Codes and Messages (on startup)
 
-Define your internal codes and localized messages:
+Define your internal codes with status codes and localized messages:
 
 ```go
 func init() {
-    // Register messages for your internal codes
+    // Register status codes for your internal codes
+    errx.RegisterHTTPErrorCode("USER_NOT_FOUND", http.StatusNotFound)
+    errx.RegisterHTTPErrorCode("EMAIL_TAKEN", http.StatusConflict)
+    
+    // Or with both HTTP and gRPC
+    errx.RegisterErrorCode("PAYMENT_FAILED", errx.StatusCode{
+        HTTPCode: http.StatusPaymentRequired,
+        GRPCCode: uint32(codes.FailedPrecondition),
+    })
+
+    // Register localized messages for your internal codes
     errx.RegisterMessage("USER_NOT_FOUND", "en", "User not found")
     errx.RegisterMessage("USER_NOT_FOUND", "vi", "Không tìm thấy người dùng")
     
@@ -118,18 +128,6 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 | `ErrForeignKeyViolation`       | 400  | InvalidArgument  |
 | `ErrUniqueConstraintViolation` | 400  | AlreadyExists    |
 
-### Custom Status Code Mapping
-
-```go
-// Register custom code with both HTTP and gRPC status
-errx.RegisterErrorCode("PAYMENT_FAILED", errx.StatusCode{
-    HTTPCode: http.StatusPaymentRequired,
-    GRPCCode: uint32(codes.FailedPrecondition),
-})
-
-// Or just HTTP
-errx.RegisterHTTPErrorCode("RATE_LIMITED", http.StatusTooManyRequests)
-```
 
 ## Thread Safety
 
