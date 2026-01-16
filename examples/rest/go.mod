@@ -3,9 +3,11 @@ module examples/rest
 go 1.25.3
 
 require (
-	github.com/tuanta7/errx v0.0.0-20260116033942-4072fb19ed92
+	github.com/tuanta7/errx v0.0.0
 	golang.org/x/text v0.33.0
 )
+
+replace github.com/tuanta7/errx => ../..
 
 require (
 	golang.org/x/sys v0.40.0 // indirect
