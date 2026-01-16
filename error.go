@@ -18,6 +18,10 @@ func New(message string, err ...error) *Error {
 	return e
 }
 
+func (e *Error) Unwrap() error {
+	return e.err
+}
+
 func (e *Error) Error() string {
 	if e.err != nil {
 		return e.err.Error()
