@@ -25,3 +25,13 @@ func (uc *UseCase) GetCounter(key string) (*Counter, error) {
 
 	return counter, nil
 }
+
+func (uc *UseCase) SetCounter(key string, counter *Counter) error {
+	err := uc.repo.SetCounter(key, counter)
+	if err != nil {
+		// adding custom error code
+		return err
+	}
+
+	return nil
+}

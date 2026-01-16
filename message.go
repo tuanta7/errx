@@ -15,14 +15,29 @@ func RegisterMessage(code InternalCode, language, message string) {
 	globalMessageMap[code][language] = message
 }
 
-func Message(code InternalCode, language string) string {
-	if code == "" {
+func Message(err *Error, language string) string {
+	if err == nil {
 		return DefaultMessage
 	}
 
-	if _, exist := globalMessageMap[code]; !exist {
-		return DefaultMessage
+	errorCode := err.Code()
+
+	messages, exists := globalMessageMap[errorCode]
+	if !exists {
+		return getErrorMessage(err)
 	}
 
-	return globalMessageMap[code][language]
+	if localized, exists := messages[language]; exists {
+		return localized
+	}
+
+	return getErrorMessage(err)
+}
+
+func getErrorMessage(err *Error) string {
+	if m := err.Message(); m != "" {
+		return m
+	}
+
+	return DefaultMessage
 }

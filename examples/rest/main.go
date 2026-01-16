@@ -20,7 +20,8 @@ func main() {
 	handler := NewHandler(uc)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/counters/{id}", handler.GetCounter)
+	mux.HandleFunc("GET /counters/{id}", handler.GetCounter)
+	mux.HandleFunc("PUT /counters/{id}", handler.SetCounter)
 
 	server := &http.Server{
 		Addr:    ":8080",
