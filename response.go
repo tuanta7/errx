@@ -1,27 +1,40 @@
 package errx
 
 import (
+	"errors"
 	"net/http"
 
 	"google.golang.org/grpc/codes"
 )
 
-func HTTPResponse(err *Error, language string) (statusCode int, message string) {
+func HTTPResponse(err error, language string) (statusCode int, message string) {
 	if err == nil {
 		return http.StatusOK, ""
 	}
 
-	statusCode = HTTPCode(err)
-	message = Message(err.Code(), language)
+	var errx *Error
+	ok := errors.As(err, &errx)
+	if !ok {
+		return HTTPCode(nil), Message("", language)
+	}
+
+	statusCode = HTTPCode(errx)
+	message = Message(errx.Code(), language)
 	return
 }
 
-func GRPCResponse(err *Error, language string) (code uint32, message string) {
+func GRPCResponse(err error, language string) (code uint32, message string) {
 	if err == nil {
 		return uint32(codes.OK), ""
 	}
 
-	code = GRPCCode(err)
-	message = Message(err.Code(), language)
+	var errx *Error
+	ok := errors.As(err, &errx)
+	if !ok {
+		return GRPCCode(nil), Message("", language)
+	}
+
+	code = GRPCCode(errx)
+	message = Message(errx.Code(), language)
 	return
 }

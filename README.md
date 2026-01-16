@@ -69,7 +69,7 @@ func init() {
 }
 ```
 
-### 2. Repository Layer
+### 2. Adapter Layer
 
 Return predefined errors:
 
@@ -79,11 +79,12 @@ func (r *UserRepo) FindByID(id int) (*User, error) {
     if errors.Is(err, sql.ErrNoRows) {
         return nil, errx.ErrRecordNotFound // predefined error
     }
-    return user, err
+	
+    return user, err // unhanded error
 }
 ```
 
-### 3. Usecase Layer
+### 3. Business Layer
 
 Attach your internal code:
 
@@ -91,14 +92,19 @@ Attach your internal code:
 func (u *UserUsecase) GetUser(id int) (*User, error) {
     user, err := u.repo.FindByID(id)
     if err != nil {
-        // Attach business-specific code
-        return nil, err.(*errx.Error).WithCode("USER_NOT_FOUND")
+        if errors.Is(err, errx.ErrRecordNotFound) {
+            // Attach business-specific code
+            return nil, errx.ErrRecordNotFound.WithCode("USER_NOT_FOUND")
+        }
+       
+        return nil, err // unhanded error
     }
-    return user, nil
+	
+    return user, nil 
 }
 ```
 
-### 4. Handler Layer
+### 4. Transport Layer
 
 Map to HTTP/gRPC response:
 
