@@ -113,7 +113,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
     user, err := h.usecase.GetUser(id)
     if err != nil {
         lang := r.Header.Get("Accept-Language")
-        statusCode, message := errx.HTTPResponse(err.(*errx.Error), lang)
+        statusCode, message := errx.HTTPResponse(err, lang)
         // statusCode = 404, message = "User not found"
         http.Error(w, message, statusCode)
         return

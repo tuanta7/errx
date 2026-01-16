@@ -13,8 +13,7 @@ func HTTPResponse(err error, language string) (statusCode int, message string) {
 	}
 
 	var errx *Error
-	ok := errors.As(err, &errx)
-	if !ok {
+	if ok := errors.As(err, &errx); !ok {
 		return HTTPCode(nil), Message(nil, language)
 	}
 
@@ -29,8 +28,7 @@ func GRPCResponse(err error, language string) (code uint32, message string) {
 	}
 
 	var errx *Error
-	ok := errors.As(err, &errx)
-	if !ok {
+	if ok := errors.As(err, &errx); !ok {
 		return GRPCCode(nil), Message(nil, language)
 	}
 
