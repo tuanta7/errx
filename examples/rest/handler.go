@@ -26,7 +26,7 @@ func (h *Handler) GetCounter(w http.ResponseWriter, r *http.Request) {
 
 	counter, err := h.uc.GetCounter(counterName)
 	if err != nil {
-		httpCode, message := errx.HTTPResponse(err, language)
+		httpCode, message := errx.Global.GetHTTPResponse(err, language)
 		http.Error(w, message, httpCode)
 		return
 	}
@@ -35,7 +35,7 @@ func (h *Handler) GetCounter(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonCounter)
 }
 
-func (h *Handler) SetCounter(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ResetCounter(w http.ResponseWriter, r *http.Request) {
 	counterName := r.PathValue("id")
 	language := r.URL.Query().Get("language")
 	if language == "" {
@@ -47,7 +47,7 @@ func (h *Handler) SetCounter(w http.ResponseWriter, r *http.Request) {
 		LastUpdated: time.Now().Unix(),
 	})
 	if err != nil {
-		httpCode, message := errx.HTTPResponse(err, language)
+		httpCode, message := errx.Global.GetHTTPResponse(err, language)
 		http.Error(w, message, httpCode)
 		return
 	}

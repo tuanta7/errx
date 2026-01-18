@@ -10,9 +10,9 @@ import (
 )
 
 func main() {
-	errx.RegisterMessage(ErrCounterNotFound, language.English.String(), "Counter not found")
-	errx.RegisterMessage(ErrCounterNotFound, language.Vietnamese.String(), "Không tìm thấy bộ đếm")
-	errx.RegisterHTTPErrorCode(ErrCounterNotFound, http.StatusNotFound)
+	errx.Global.RegisterMessage(ErrCounterNotFound, language.English.String(), "Counter not found")
+	errx.Global.RegisterMessage(ErrCounterNotFound, language.Vietnamese.String(), "Không tìm thấy bộ đếm")
+	errx.Global.RegisterHTTPErrorCode(ErrCounterNotFound, http.StatusNotFound)
 
 	cache := NewCache()
 	repo := NewRepository(cache)
@@ -21,7 +21,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /counters/{id}", handler.GetCounter)
-	mux.HandleFunc("PUT /counters/{id}", handler.SetCounter)
+	mux.HandleFunc("PUT /counters/{id}", handler.ResetCounter)
 
 	server := &http.Server{
 		Addr:    ":8080",

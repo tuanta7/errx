@@ -2,6 +2,10 @@
 
 ⛔ An ergonomic Go error package for layered architectures
 
+```bash
+go get github.com/tuanta7/errx
+```
+
 ## Features
 
 - Immutable error wrapping with builder-style methods
@@ -9,19 +13,11 @@
 - User-defined internal codes and localized messages
 - Designed for clean architecture (repo → usecase → handler)
 
-## Installation
-
-```bash
-go get github.com/tuanta7/errx
-```
-
-## Architecture
-
-`errx` is designed around a layered architecture pattern:
+`errx` is designed around a typical layered architecture pattern:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Handler Layer                                              │
+│  Transport Layer                                            │
 │  - Maps error to HTTP/gRPC status code                      │
 │  - Returns localized message to client                      │
 └─────────────────────────────────────────────────────────────┘
@@ -29,7 +25,7 @@ go get github.com/tuanta7/errx
                             │ *errx.Error with code
                             │
 ┌─────────────────────────────────────────────────────────────┐
-│  Usecase Layer                                              │
+│  Business Layer                                             │
 │  - Receives predefined error from repo                      │
 │  - Attaches internal code for business context              │
 └─────────────────────────────────────────────────────────────┘
@@ -37,7 +33,7 @@ go get github.com/tuanta7/errx
                             │ predefined *errx.Error
                             │
 ┌─────────────────────────────────────────────────────────────┐
-│  Repository Layer                                           │
+│  Adapter Layer                                              │
 │  - Returns predefined errors (ErrRecordNotFound, etc.)      │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -53,7 +49,7 @@ func init() {
     // Register status codes for your internal codes
     errx.RegisterHTTPErrorCode("USER_NOT_FOUND", http.StatusNotFound)
     errx.RegisterHTTPErrorCode("EMAIL_TAKEN", http.StatusConflict)
-    
+
     // Or with both HTTP and gRPC
     errx.RegisterErrorCode("PAYMENT_FAILED", errx.StatusCode{
         HTTPCode: http.StatusPaymentRequired,
@@ -63,7 +59,7 @@ func init() {
     // Register localized messages for your internal codes
     errx.RegisterMessage("USER_NOT_FOUND", "en", "User not found")
     errx.RegisterMessage("USER_NOT_FOUND", "vi", "Không tìm thấy người dùng")
-    
+
     errx.RegisterMessage("EMAIL_TAKEN", "en", "Email already registered")
     errx.RegisterMessage("EMAIL_TAKEN", "vi", "Email đã được đăng ký")
 }
@@ -79,8 +75,8 @@ func (r *UserRepo) FindByID(id int) (*User, error) {
     if errors.Is(err, sql.ErrNoRows) {
         return nil, errx.ErrRecordNotFound // predefined error
     }
-	
-    return user, err // unhanded error
+
+    return user, err // unhandled error
 }
 ```
 
@@ -96,11 +92,11 @@ func (u *UserUsecase) GetUser(id int) (*User, error) {
             // Attach business-specific code
             return nil, errx.ErrRecordNotFound.WithCode("USER_NOT_FOUND")
         }
-       
+
         return nil, err // unhanded error
     }
-	
-    return user, nil 
+
+    return user, nil
 }
 ```
 
@@ -133,7 +129,6 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 | `ErrOperationTimeout`          | 504  | DeadlineExceeded |
 | `ErrForeignKeyViolation`       | 400  | InvalidArgument  |
 | `ErrUniqueConstraintViolation` | 400  | AlreadyExists    |
-
 
 ## Thread Safety
 
