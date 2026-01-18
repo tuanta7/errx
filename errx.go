@@ -59,6 +59,9 @@ func (e *Errx) LoadMessages(filePath string, p parsers.Parser) error {
 }
 
 func (e *Errx) RegisterMessage(code string, language, message string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	if _, exist := e.MessageMap[code]; !exist {
 		e.MessageMap[code] = make(map[string]string)
 	}
@@ -72,6 +75,9 @@ func (e *Errx) GetMessage(err *errors.Error, language string) string {
 	}
 
 	errorCode := err.Code()
+
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 
 	messages, exists := e.MessageMap[errorCode]
 	if !exists {
@@ -94,10 +100,16 @@ func getErrorMessage(err *errors.Error) string {
 }
 
 func (e *Errx) RegisterErrorCode(code string, statusCode errors.StatusCode) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	e.ErrorStatusCodeMap[code] = statusCode
 }
 
 func (e *Errx) RegisterHTTPErrorCode(code string, statusCode int) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	if codeStatus, ok := e.ErrorStatusCodeMap[code]; ok {
 		codeStatus.HTTPCode = statusCode
 		return
@@ -108,10 +120,27 @@ func (e *Errx) RegisterHTTPErrorCode(code string, statusCode int) {
 	}
 }
 
+func (e *Errx) RegisterGRPCErrorCode(code string, statusCode uint32) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if codeStatus, ok := e.ErrorStatusCodeMap[code]; ok {
+		codeStatus.GRPCCode = statusCode
+		return
+	}
+
+	e.ErrorStatusCodeMap[code] = errors.StatusCode{
+		GRPCCode: statusCode,
+	}
+}
+
 func (e *Errx) GetHTTPCode(err *errors.Error) int {
 	if err == nil {
 		return DefaultHTTPStatusCode
 	}
+
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 
 	if code, ok := e.ErrorStatusCodeMap[err.Code()]; ok {
 		return code.HTTPCode
@@ -124,6 +153,9 @@ func (e *Errx) GetGRPCCode(err *errors.Error) uint32 {
 	if err == nil {
 		return DefaultGRPCStatusCode
 	}
+
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 
 	if code, ok := e.ErrorStatusCodeMap[err.Code()]; ok {
 		return code.GRPCCode
