@@ -126,17 +126,15 @@ Attach your internal code to give business context:
 package usecase
 
 import (
-    "errors"
-
-    errors2 "github.com/tuanta7/errx/errors"
+    "github.com/tuanta7/errx/errors"
 )
 
 func (uc *UseCase) GetCounter(key string) (*Counter, error) {
     counter, err := uc.repo.GetCounter(key)
     if err != nil {
-        if errors.Is(err, errors2.ErrRecordNotFound) {
+        if errors.Is(err, errors.ErrRecordNotFound) {
             // Attach business-specific code
-            return nil, errors2.ErrRecordNotFound.WithCode(ErrCounterNotFound)
+            return nil, errors.ErrRecordNotFound.WithCode(ErrCounterNotFound)
         }
         return nil, err
     }

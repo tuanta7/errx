@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
-
-	errors2 "github.com/tuanta7/errx/errors"
+	"github.com/tuanta7/errx/errors"
 )
 
 type UseCase struct {
@@ -17,8 +15,8 @@ func NewUseCase(repo *Repository) *UseCase {
 func (uc *UseCase) GetCounter(key string) (*Counter, error) {
 	counter, err := uc.repo.GetCounter(key)
 	if err != nil {
-		if errors.Is(err, errors2.ErrRecordNotFound) {
-			return nil, errors2.ErrRecordNotFound.WithCode(ErrCounterNotFound)
+		if errors.Is(err, errors.ErrRecordNotFound) {
+			return nil, errors.ErrRecordNotFound.WithCode(ErrCounterNotFound)
 		}
 		return nil, err
 	}
