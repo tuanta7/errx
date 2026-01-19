@@ -8,8 +8,8 @@ func Parser() *JSON {
 	return &JSON{}
 }
 
-func (j *JSON) Unmarshal(bytes []byte) (map[string]map[string]string, error) {
-	var m map[string]map[string]string
+func (j *JSON) Unmarshal(bytes []byte) (map[string]string, error) {
+	var m map[string]string
 	if err := json.Unmarshal(bytes, &m); err != nil {
 		return nil, err
 	}
@@ -17,6 +17,6 @@ func (j *JSON) Unmarshal(bytes []byte) (map[string]map[string]string, error) {
 	return m, nil
 }
 
-func (j *JSON) Marshal(m map[string]any) ([]byte, error) {
+func (j *JSON) Marshal(m map[string]string) ([]byte, error) {
 	return json.Marshal(m)
 }

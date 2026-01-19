@@ -1,6 +1,6 @@
 package parsers
 
 type Parser interface {
-	Unmarshal([]byte) (map[string]map[string]string, error)
-	Marshal(map[string]any) ([]byte, error)
+	Unmarshal([]byte) (map[string]string, error)
+	Marshal(map[string]string) ([]byte, error)
 }

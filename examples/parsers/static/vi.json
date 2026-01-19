@@ -1,0 +1,5 @@
+{
+  "ERR_RESOURCE_NOT_FOUND": "Không tìm thấy tài nguyên",
+  "ERR_INVALID_INPUT":  "Dữ liệu đầu vào không hợp lệ",
+  "ERR_UNAUTHORIZED_ACCESS":  "Truy cập không được phép"
+}

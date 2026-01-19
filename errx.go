@@ -37,7 +37,7 @@ func New() *Errx {
 	}
 }
 
-func (e *Errx) LoadMessages(filePath string, p parsers.Parser) error {
+func (e *Errx) LoadMessages(language, filePath string, p parsers.Parser) error {
 	bytesContents, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -51,8 +51,11 @@ func (e *Errx) LoadMessages(filePath string, p parsers.Parser) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	for code, messages := range m {
-		e.MessageMap[code] = messages
+	for code, message := range m {
+		if _, exist := e.MessageMap[code]; !exist {
+			e.MessageMap[code] = make(map[string]string)
+		}
+		e.MessageMap[code][language] = message
 	}
 
 	return nil

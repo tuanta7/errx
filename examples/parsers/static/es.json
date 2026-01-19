@@ -1,0 +1,5 @@
+{
+  "ERR_RESOURCE_NOT_FOUND": "Recurso no encontrado",
+  "ERR_INVALID_INPUT":  "Entrada no válida proporcionada",
+  "ERR_UNAUTHORIZED_ACCESS": "Acceso no autorizado"
+}

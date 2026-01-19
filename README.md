@@ -181,27 +181,36 @@ func (h *Handler) GetCounter(w http.ResponseWriter, r *http.Request) {
 
 ## Loading Messages from Files
 
-Instead of registering messages one by one, you can load them from JSON or YAML files:
+Instead of registering messages one by one, you can load them from JSON or YAML files. Each file contains messages for a single language.
 
 ### JSON Format
 
+Create one file per language with a flat code-to-message mapping:
+
+**static/en.json**
 ```json
 {
-  "ERR_RESOURCE_NOT_FOUND": {
-    "en": "Resource not found",
-    "vi": "Không tìm thấy tài nguyên",
-    "es": "Recurso no encontrado"
-  },
-  "ERR_INVALID_INPUT": {
-    "en": "Invalid input provided",
-    "vi": "Dữ liệu đầu vào không hợp lệ",
-    "es": "Entrada no válida proporcionada"
-  },
-  "ERR_UNAUTHORIZED_ACCESS": {
-    "en": "Unauthorized access",
-    "vi": "Truy cập không được phép",
-    "es": "Acceso no autorizado"
-  }
+  "ERR_RESOURCE_NOT_FOUND": "Resource not found",
+  "ERR_INVALID_INPUT": "Invalid input provided",
+  "ERR_UNAUTHORIZED_ACCESS": "Unauthorized access"
+}
+```
+
+**static/vi.json**
+```json
+{
+  "ERR_RESOURCE_NOT_FOUND": "Không tìm thấy tài nguyên",
+  "ERR_INVALID_INPUT": "Dữ liệu đầu vào không hợp lệ",
+  "ERR_UNAUTHORIZED_ACCESS": "Truy cập không được phép"
+}
+```
+
+**static/es.json**
+```json
+{
+  "ERR_RESOURCE_NOT_FOUND": "Recurso no encontrado",
+  "ERR_INVALID_INPUT": "Entrada no válida proporcionada",
+  "ERR_UNAUTHORIZED_ACCESS": "Acceso no autorizado"
 }
 ```
 
@@ -212,11 +221,24 @@ import (
     "github.com/tuanta7/errx"
     "github.com/tuanta7/errx/errors"
     "github.com/tuanta7/errx/parsers/json"
+    lang "golang.org/x/text/language"
 )
 
 func main() {
     errx.SetGlobal(errx.New())
-    err := errx.Global.LoadMessages("./errors.json", json.Parser())
+
+    // Load messages for each language
+    err := errx.Global.LoadMessages(lang.English.String(), "./static/en.json", json.Parser())
+    if err != nil {
+        panic(err)
+    }
+
+    err = errx.Global.LoadMessages(lang.Spanish.String(), "./static/es.json", json.Parser())
+    if err != nil {
+        panic(err)
+    }
+
+    err = errx.Global.LoadMessages(lang.Vietnamese.String(), "./static/vi.json", json.Parser())
     if err != nil {
         panic(err)
     }
@@ -224,9 +246,9 @@ func main() {
     // Now you can use the messages
     ErrNotFound := errors.New("default not found message").WithCode("ERR_RESOURCE_NOT_FOUND")
 
-    fmt.Println(errx.Global.GetMessage(ErrNotFound, "en")) // "Resource not found"
-    fmt.Println(errx.Global.GetMessage(ErrNotFound, "es")) // "Recurso no encontrado"
-    fmt.Println(errx.Global.GetMessage(ErrNotFound, "vi")) // "Không tìm thấy tài nguyên"
+    fmt.Println(errx.Global.GetMessage(ErrNotFound, lang.English.String()))    // "Resource not found"
+    fmt.Println(errx.Global.GetMessage(ErrNotFound, lang.Spanish.String()))    // "Recurso no encontrado"
+    fmt.Println(errx.Global.GetMessage(ErrNotFound, lang.Vietnamese.String())) // "Không tìm thấy tài nguyên"
 }
 ```
 
