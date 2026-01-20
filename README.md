@@ -11,8 +11,14 @@ go get github.com/tuanta7/errx
 - Immutable error wrapping with builder-style methods
 - HTTP and gRPC status code mapping
 - User-defined internal codes and localized messages
-- Load messages from JSON/YAML files
-- Designed for clean architecture (repo → usecase → handler)
+- Load messages from JSON files
+- Designed for layered architecture
+
+### TODO
+
+- [ ] Add support for loading configuration from YAML files
+- [ ] Add support for a hierarchical error format within the file
+- [ ] Add more common errors
 
 ## Architecture
 
