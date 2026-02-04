@@ -1,4 +1,4 @@
-package errors
+package errx
 
 type Error struct {
 	code    string

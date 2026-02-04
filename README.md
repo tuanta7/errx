@@ -54,7 +54,6 @@ go get github.com/tuanta7/errx
 Define your project-specific error codes as constants:
 
 ```go
-// domain/errors.go
 package domain
 
 const (
@@ -72,23 +71,24 @@ Register status codes and localized messages for your internal codes:
 package main
 
 import (
-    "net/http"
+	"net/http"
 
-    "github.com/tuanta7/errx"
-    "golang.org/x/text/language"
+	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/registry"
+	"golang.org/x/text/language"
 )
 
 func main() {
-    // Register HTTP status code for your internal codes
-    errx.Global.RegisterHTTPErrorCode(ErrCounterNotFound, http.StatusNotFound)
-    errx.Global.RegisterHTTPErrorCode(ErrUserNotFound, http.StatusNotFound)
-    errx.Global.RegisterHTTPErrorCode(ErrEmailTaken, http.StatusConflict)
+	// Register HTTP status code for your internal codes
+	registry.Global.RegisterHTTPStatus(ErrCounterNotFound, http.StatusNotFound)
+	registry.Global.RegisterHTTPStatus(ErrUserNotFound, http.StatusNotFound)
+	registry.Global.RegisterHTTPStatus(ErrEmailTaken, http.StatusConflict)
 
-    // Register localized messages
-    errx.Global.RegisterMessage(ErrCounterNotFound, language.English.String(), "Counter not found")
-    errx.Global.RegisterMessage(ErrCounterNotFound, language.Vietnamese.String(), "Không tìm thấy bộ đếm")
+	// Register localized messages
+	registry.Global.RegisterMessage(ErrCounterNotFound, language.English.String(), "Counter not found")
+	registry.Global.RegisterMessage(ErrCounterNotFound, language.Vietnamese.String(), "Không tìm thấy bộ đếm")
 
-    // ... start your server
+	// ... start your server
 }
 ```
 
@@ -100,31 +100,33 @@ Return predefined errors from your data layer:
 package repository
 
 import (
-    "encoding/json"
+	"encoding/json"
+	"errors"
 
-    "github.com/tuanta7/errx/errors"
+	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/predefined"
 )
 
 func (r *Repository) GetCounter(key string) (*Counter, error) {
-    value, err := r.cache.Get(key)
-    if err != nil {
-        if errors.Is(err, ErrNotFound) {
-            return nil, errors.ErrRecordNotFound // Return predefined error
-        }
-        return nil, err
-    }
+	value, err := r.cache.Get(key)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return nil, predefined.ErrRecordNotFound // Return predefined error
+		}
+		return nil, err
+	}
 
-    counter := &Counter{}
-    err = json.Unmarshal(value, counter)
-    if err != nil {
-        return nil, errors.New("failed to unmarshal counter", err)
-    }
+	counter := &Counter{}
+	err = json.Unmarshal(value, counter)
+	if err != nil {
+		return nil, errx.New("failed to unmarshal counter", err)
+	}
 
-    return counter, nil
+	return counter, nil
 }
 ```
 
-### 4. Business Layer (Usecase)
+### 4. Business Layer (Use Case)
 
 Attach your internal code to give business context:
 
@@ -132,20 +134,23 @@ Attach your internal code to give business context:
 package usecase
 
 import (
-    "github.com/tuanta7/errx/errors"
+	"errors"
+
+	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/predefined"
 )
 
 func (uc *UseCase) GetCounter(key string) (*Counter, error) {
-    counter, err := uc.repo.GetCounter(key)
-    if err != nil {
-        if errors.Is(err, errors.ErrRecordNotFound) {
-            // Attach business-specific code
-            return nil, errors.ErrRecordNotFound.WithCode(ErrCounterNotFound)
-        }
-        return nil, err
-    }
+	counter, err := uc.repo.GetCounter(key)
+	if err != nil {
+		if errors.Is(err, predefined.ErrRecordNotFound) {
+			// Attach business-specific code
+			return nil, predefined.ErrRecordNotFound.WithCode(ErrCounterNotFound)
+		}
+		return nil, err
+	}
 
-    return counter, nil
+	return counter, nil
 }
 ```
 
@@ -157,31 +162,32 @@ Map to HTTP/gRPC response using registered status codes and messages:
 package handler
 
 import (
-    "encoding/json"
-    "net/http"
+	"encoding/json"
+	"net/http"
 
-    "github.com/tuanta7/errx"
-    lang "golang.org/x/text/language"
+	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/registry"
+	lang "golang.org/x/text/language"
 )
 
 func (h *Handler) GetCounter(w http.ResponseWriter, r *http.Request) {
-    counterName := r.PathValue("id")
-    language := r.URL.Query().Get("language")
-    if language == "" {
-        language = lang.English.String()
-    }
+	counterName := r.PathValue("id")
+	language := r.URL.Query().Get("language")
+	if language == "" {
+		language = lang.English.String()
+	}
 
-    counter, err := h.uc.GetCounter(counterName)
-    if err != nil {
-        // Get HTTP status code and localized message
-        httpCode, message := errx.Global.GetHTTPResponse(err, language)
-        // httpCode = 404, message = "Counter not found" (or "Không tìm thấy bộ đếm" for Vietnamese)
-        http.Error(w, message, httpCode)
-        return
-    }
+	counter, err := h.uc.GetCounter(counterName)
+	if err != nil {
+		// Get HTTP status code and localized message
+		httpCode, message := registry.Global.ResolveHTTP(err, language)
+		// httpCode = 404, message = "Counter not found" (or "Không tìm thấy bộ đếm" for Vietnamese)
+		http.Error(w, message, httpCode)
+		return
+	}
 
-    jsonCounter, _ := json.Marshal(counter)
-    _, _ = w.Write(jsonCounter)
+	jsonCounter, _ := json.Marshal(counter)
+	_, _ = w.Write(jsonCounter)
 }
 ```
 
@@ -223,38 +229,39 @@ Create one file per language with a flat code-to-message mapping:
 ### Load Messages
 
 ```go
+package main
+
 import (
-    "github.com/tuanta7/errx"
-    "github.com/tuanta7/errx/errors"
-    "github.com/tuanta7/errx/parsers/json"
-    lang "golang.org/x/text/language"
+	"fmt"
+
+	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/parsers/json"
+	"github.com/tuanta7/errx/registry"
+	lang "golang.org/x/text/language"
 )
 
 func main() {
-    errx.SetGlobal(errx.New())
+	registry.SetGlobal(registry.New())
+	err := registry.Global.LoadMessages(lang.English.String(), "./static/en.json", json.Parser())
+	if err != nil {
+		panic(err)
+	}
 
-    // Load messages for each language
-    err := errx.Global.LoadMessages(lang.English.String(), "./static/en.json", json.Parser())
-    if err != nil {
-        panic(err)
-    }
+	err = registry.Global.LoadMessages(lang.Spanish.String(), "./static/es.json", json.Parser())
+	if err != nil {
+		panic(err)
+	}
 
-    err = errx.Global.LoadMessages(lang.Spanish.String(), "./static/es.json", json.Parser())
-    if err != nil {
-        panic(err)
-    }
+	err = registry.Global.LoadMessages(lang.Vietnamese.String(), "./static/vi.json", json.Parser())
+	if err != nil {
+		panic(err)
+	}
 
-    err = errx.Global.LoadMessages(lang.Vietnamese.String(), "./static/vi.json", json.Parser())
-    if err != nil {
-        panic(err)
-    }
+	ErrNotFound := errx.New("default not found message").WithCode("ERR_RESOURCE_NOT_FOUND")
 
-    // Now you can use the messages
-    ErrNotFound := errors.New("default not found message").WithCode("ERR_RESOURCE_NOT_FOUND")
-
-    fmt.Println(errx.Global.GetMessage(ErrNotFound, lang.English.String()))    // "Resource not found"
-    fmt.Println(errx.Global.GetMessage(ErrNotFound, lang.Spanish.String()))    // "Recurso no encontrado"
-    fmt.Println(errx.Global.GetMessage(ErrNotFound, lang.Vietnamese.String())) // "Không tìm thấy tài nguyên"
+	fmt.Println(registry.Global.GetMessage(ErrNotFound, lang.English.String()))
+	fmt.Println(registry.Global.GetMessage(ErrNotFound, lang.Spanish.String()))
+	fmt.Println(registry.Global.GetMessage(ErrNotFound, lang.Vietnamese.String()))
 }
 ```
 

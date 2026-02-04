@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/registry"
 	lang "golang.org/x/text/language"
 )
 
@@ -26,7 +26,7 @@ func (h *Handler) GetCounter(w http.ResponseWriter, r *http.Request) {
 
 	counter, err := h.uc.GetCounter(counterName)
 	if err != nil {
-		httpCode, message := errx.Global.GetHTTPResponse(err, language)
+		httpCode, message := registry.Global.ResolveHTTP(err, language)
 		http.Error(w, message, httpCode)
 		return
 	}
@@ -47,7 +47,7 @@ func (h *Handler) ResetCounter(w http.ResponseWriter, r *http.Request) {
 		LastUpdated: time.Now().Unix(),
 	})
 	if err != nil {
-		httpCode, message := errx.Global.GetHTTPResponse(err, language)
+		httpCode, message := registry.Global.ResolveHTTP(err, language)
 		http.Error(w, message, httpCode)
 		return
 	}

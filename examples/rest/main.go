@@ -5,14 +5,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/registry"
 	"golang.org/x/text/language"
 )
 
 func main() {
-	errx.Global.RegisterMessage(ErrCounterNotFound, language.English.String(), "Counter not found")
-	errx.Global.RegisterMessage(ErrCounterNotFound, language.Vietnamese.String(), "Không tìm thấy bộ đếm")
-	errx.Global.RegisterHTTPErrorCode(ErrCounterNotFound, http.StatusNotFound)
+	registry.Global.RegisterMessage(ErrCounterNotFound, language.English.String(), "Counter not found")
+	registry.Global.RegisterMessage(ErrCounterNotFound, language.Vietnamese.String(), "Không tìm thấy bộ đếm")
+	registry.Global.RegisterHTTPStatus(ErrCounterNotFound, http.StatusNotFound)
 
 	cache := NewCache()
 	repo := NewRepository(cache)

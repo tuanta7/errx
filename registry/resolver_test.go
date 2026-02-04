@@ -1,22 +1,22 @@
-package errx
+package registry
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"github.com/tuanta7/errx/errors"
+	errx2 "github.com/tuanta7/errx"
 )
 
 type MessageTestSuite struct {
 	suite.Suite
 	err        error
-	wrappedErr *errors.Error
-	errx       *Errx
+	wrappedErr *errx2.Error
+	errx       *Registry
 }
 
 func (s *MessageTestSuite) SetupSuite() {
-	s.err = errors.New("test error")
-	s.wrappedErr = errors.New("wrapped message", s.err).WithCode("ERRX_TEST_ERROR")
+	s.err = errx2.New("test error")
+	s.wrappedErr = errx2.New("wrapped message", s.err).WithCode("ERRX_TEST_ERROR")
 	s.errx = New()
 
 	s.errx.RegisterMessage("ERRX_TEST_ERROR", "en", "test error")

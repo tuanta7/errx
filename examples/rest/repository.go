@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 
-	"github.com/tuanta7/errx/errors"
+	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/predefined"
 )
 
 type Repository struct {
@@ -18,7 +20,7 @@ func (r *Repository) GetCounter(key string) (*Counter, error) {
 	value, err := r.cache.Get(key)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			return nil, errors.ErrRecordNotFound
+			return nil, predefined.ErrRecordNotFound
 		}
 
 		return nil, err
@@ -27,7 +29,7 @@ func (r *Repository) GetCounter(key string) (*Counter, error) {
 	counter := &Counter{}
 	err = json.Unmarshal(value, counter)
 	if err != nil {
-		return nil, errors.New("failed to unmarshal counter", err)
+		return nil, errx.New("failed to unmarshal counter", err)
 	}
 
 	return counter, nil
@@ -36,7 +38,7 @@ func (r *Repository) GetCounter(key string) (*Counter, error) {
 func (r *Repository) SetCounter(key string, counter *Counter) error {
 	data, err := json.Marshal(counter)
 	if err != nil {
-		return errors.New("failed to marshal counter", err)
+		return errx.New("failed to marshal counter", err)
 	}
 
 	r.cache.Set(key, data)
