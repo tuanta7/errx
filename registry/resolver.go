@@ -6,7 +6,7 @@ import (
 	"os"
 	"sync"
 
-	x "github.com/tuanta7/errx"
+	"github.com/tuanta7/errx"
 	"github.com/tuanta7/errx/parsers"
 	"google.golang.org/grpc/codes"
 )
@@ -19,13 +19,13 @@ const (
 
 type Registry struct {
 	mu            sync.RWMutex
-	StatusCodeMap map[string]x.StatusCode
+	StatusCodeMap map[string]errx.StatusCode
 	MessageMap    map[string]map[string]string // code -> language -> message
 }
 
 func New() *Registry {
 	return &Registry{
-		StatusCodeMap: make(map[string]x.StatusCode),
+		StatusCodeMap: make(map[string]errx.StatusCode),
 		MessageMap:    make(map[string]map[string]string),
 	}
 }
@@ -54,7 +54,7 @@ func (e *Registry) LoadMessages(language, filePath string, p parsers.Parser) err
 	return nil
 }
 
-func (e *Registry) RegisterMessage(code string, language, message string) {
+func (e *Registry) RegisterMessage(code, language, message string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -65,37 +65,37 @@ func (e *Registry) RegisterMessage(code string, language, message string) {
 	e.MessageMap[code][language] = message
 }
 
-func (e *Registry) GetMessage(errx *x.Error, language string) string {
-	if errx == nil {
+func (e *Registry) GetMessage(ex *errx.Error, language string) string {
+	if ex == nil {
 		return DefaultMessage
 	}
 
-	errorCode := errx.Code()
+	errorCode := ex.Code()
 
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
 	messages, exists := e.MessageMap[errorCode]
 	if !exists {
-		return getErrorMessage(errx)
+		return getErrorMessage(ex)
 	}
 
 	if localized, exists := messages[language]; exists {
 		return localized
 	}
 
-	return getErrorMessage(errx)
+	return getErrorMessage(ex)
 }
 
-func getErrorMessage(errx *x.Error) string {
-	if m := errx.Message(); m != "" {
+func getErrorMessage(ex *errx.Error) string {
+	if m := ex.Message(); m != "" {
 		return m
 	}
 
 	return DefaultMessage
 }
 
-func (e *Registry) RegisterStatus(code string, statusCode x.StatusCode) {
+func (e *Registry) RegisterStatus(code string, statusCode errx.StatusCode) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -108,10 +108,11 @@ func (e *Registry) RegisterHTTPStatus(code string, statusCode int) {
 
 	if codeStatus, ok := e.StatusCodeMap[code]; ok {
 		codeStatus.HTTPCode = statusCode
+		e.StatusCodeMap[code] = codeStatus
 		return
 	}
 
-	e.StatusCodeMap[code] = x.StatusCode{
+	e.StatusCodeMap[code] = errx.StatusCode{
 		HTTPCode: statusCode,
 	}
 }
@@ -122,15 +123,16 @@ func (e *Registry) RegisterGRPCStatus(code string, statusCode uint32) {
 
 	if codeStatus, ok := e.StatusCodeMap[code]; ok {
 		codeStatus.GRPCCode = statusCode
+		e.StatusCodeMap[code] = codeStatus
 		return
 	}
 
-	e.StatusCodeMap[code] = x.StatusCode{
+	e.StatusCodeMap[code] = errx.StatusCode{
 		GRPCCode: statusCode,
 	}
 }
 
-func (e *Registry) HTTPCode(err *x.Error) int {
+func (e *Registry) HTTPCode(err *errx.Error) int {
 	if err == nil {
 		return DefaultHTTPStatusCode
 	}
@@ -145,15 +147,15 @@ func (e *Registry) HTTPCode(err *x.Error) int {
 	return DefaultHTTPStatusCode
 }
 
-func (e *Registry) GRPCCode(errx *x.Error) uint32 {
-	if errx == nil {
+func (e *Registry) GRPCCode(ex *errx.Error) uint32 {
+	if ex == nil {
 		return DefaultGRPCStatusCode
 	}
 
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	if code, ok := e.StatusCodeMap[errx.Code()]; ok {
+	if code, ok := e.StatusCodeMap[ex.Code()]; ok {
 		return code.GRPCCode
 	}
 
@@ -165,13 +167,13 @@ func (e *Registry) ResolveHTTP(err error, language string) (statusCode int, mess
 		return http.StatusOK, ""
 	}
 
-	var errx *x.Error
-	if ok := errors.As(err, &errx); !ok {
+	var ex *errx.Error
+	if ok := errors.As(err, &ex); !ok {
 		return e.HTTPCode(nil), e.GetMessage(nil, language)
 	}
 
-	statusCode = e.HTTPCode(errx)
-	message = e.GetMessage(errx, language)
+	statusCode = e.HTTPCode(ex)
+	message = e.GetMessage(ex, language)
 	return
 }
 
@@ -180,12 +182,12 @@ func (e *Registry) ResolveGRPC(err error, language string) (code uint32, message
 		return uint32(codes.OK), ""
 	}
 
-	var errx *x.Error
-	if ok := errors.As(err, &errx); !ok {
+	var ex *errx.Error
+	if ok := errors.As(err, &ex); !ok {
 		return e.GRPCCode(nil), e.GetMessage(nil, language)
 	}
 
-	code = e.GRPCCode(errx)
-	message = e.GetMessage(errx, language)
+	code = e.GRPCCode(ex)
+	message = e.GetMessage(ex, language)
 	return
 }

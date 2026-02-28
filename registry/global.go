@@ -11,6 +11,7 @@ var (
 	}
 )
 
+// SetGlobal is ony safe to call during initialization phase.
 func SetGlobal(e *Registry) {
 	Global = e
 }

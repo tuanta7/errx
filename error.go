@@ -23,6 +23,10 @@ func (e *Error) Unwrap() error {
 }
 
 func (e *Error) Error() string {
+	if e == nil {
+		return ""
+	}
+
 	if e.err != nil {
 		return e.err.Error()
 	}
