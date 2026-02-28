@@ -1,5 +1,7 @@
 package errx
 
+import "errors"
+
 type Error struct {
 	code    string
 	message string
@@ -46,4 +48,17 @@ func (e *Error) Code() string {
 
 func (e *Error) Message() string {
 	return e.message
+}
+
+func (e *Error) Is(target error) bool {
+	if e == nil || e.err == nil {
+		return target == nil
+	}
+
+	var ex *Error
+	if errors.As(target, &ex) {
+		return errors.Is(e.err, ex.err)
+	}
+
+	return errors.Is(e.err, target)
 }

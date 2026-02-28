@@ -80,7 +80,7 @@ func (e *Registry) GetMessage(ex *errx.Error, language string) string {
 		return getErrorMessage(ex)
 	}
 
-	if localized, exists := messages[language]; exists {
+	if localized, ok := messages[language]; ok {
 		return localized
 	}
 

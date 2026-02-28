@@ -39,6 +39,7 @@ func (s *ErrorTypeTestSuite) TestErrorIsMethod() {
 
 	copyErrx := s.errx.WithCode("errx_test_code")
 	s.True(errors.Is(copyErrx, s.errx))
+	s.True(copyErrx.Is(s.errx))
 }
 
 func (s *ErrorTypeTestSuite) TestErrorAsMethod() {
