@@ -280,6 +280,35 @@ These errors are designed to be returned from the adapter/repository layer:
 | `ErrForeignKeyViolation`       | 400  | InvalidArgument  | Invalid reference               |
 | `ErrUniqueConstraintViolation` | 400  | AlreadyExists    | Duplicate entry                 |
 
+## Language Tag Behavior
+
+`GetMessage`, `ResolveHTTP`, and `ResolveGRPC` accept any BCP 47 language tag string (e.g. `"en"`, `"en-US"`, `"es-MX"`).
+
+**Resolution order:**
+
+1. **Exact tag match** — messages registered under the exact string (e.g. `"en-US"`) are returned immediately.
+2. **Base language fallback** — if no exact match is found, the base language is derived from the tag (e.g. `"en-US"` → `"en"`) and that message is returned when available.
+3. **Error's built-in message** — if no registered message exists, `(*Error).Message()` is returned when non-empty.
+4. **`DefaultMessage`** — final fallback (`"internal server error"`).
+
+**Example:**
+
+```go
+// Register a message only for "en" (no region variants needed)
+registry.Global.RegisterMessage("ERR_NOT_FOUND", "en", "Resource not found")
+registry.Global.RegisterMessage("ERR_NOT_FOUND", "es", "Recurso no encontrado")
+
+err := predefined.ErrRecordNotFound.WithCode("ERR_NOT_FOUND")
+
+// Exact match
+fmt.Println(registry.Global.GetMessage(err, "en"))    // "Resource not found"
+// Regioned tag falls back to base language
+fmt.Println(registry.Global.GetMessage(err, "en-US")) // "Resource not found"
+fmt.Println(registry.Global.GetMessage(err, "es-MX")) // "Recurso no encontrado"
+// Unregistered language falls back to error's built-in message
+fmt.Println(registry.Global.GetMessage(err, "vi"))    // "record not found"
+```
+
 ## Thread Safety
 
 All methods return new `*Error` instances, leaving the original unchanged. Safe for concurrent use.
