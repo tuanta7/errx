@@ -191,6 +191,44 @@ func (h *Handler) GetCounter(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+## Local (Non-Global) Registry
+
+`registry.Global` is convenient, but you can create isolated registries for testing, multi-tenant apps, or modular services. Call `registry.New()` to get an independent instance:
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/tuanta7/errx"
+	"github.com/tuanta7/errx/registry"
+)
+
+func main() {
+	r := registry.New()
+
+	// Register status codes
+	r.RegisterHTTPStatus("ERR_NOT_FOUND", http.StatusNotFound)
+	r.RegisterGRPCStatus("ERR_NOT_FOUND", 5) // codes.NotFound
+
+	// Register localized messages
+	r.RegisterMessage("ERR_NOT_FOUND", "en", "Resource not found")
+	r.RegisterMessage("ERR_NOT_FOUND", "es", "Recurso no encontrado")
+
+	err := errx.New("record not found").WithCode("ERR_NOT_FOUND")
+
+	httpCode, msg := r.ResolveHTTP(err, "en")
+	fmt.Println(httpCode, msg) // 404 Resource not found
+
+	grpcCode, msg := r.ResolveGRPC(err, "es")
+	fmt.Println(grpcCode, msg) // 5 Recurso no encontrado
+}
+```
+
+Each `*registry.Registry` is fully independent and thread-safe. `registry.Global` is itself a `*registry.Registry` that is set once at startup via `registry.SetGlobal(...)`.
+
 ## Loading Messages from Files
 
 Instead of registering messages one by one, you can load them from JSON or YAML files. Each file contains messages for a single language.

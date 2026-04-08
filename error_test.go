@@ -51,8 +51,16 @@ func (s *ErrorTypeTestSuite) TestErrorAsMethod() {
 }
 
 func (s *ErrorTypeTestSuite) TestErrorFormat() {
-	s.Equal("test error", s.errx.Error())
+	s.Equal("wrapped message: test error", s.errx.Error())
 	s.Equal("wrapped message", s.errx.Message())
+
+	// Error without a wrapped error returns only the message.
+	noWrap := New("standalone message")
+	s.Equal("standalone message", noWrap.Error())
+
+	// Nil receiver is safe.
+	var nilErr *Error
+	s.Equal("", nilErr.Error())
 }
 
 func TestClientRepositoryTestSuite(t *testing.T) {
