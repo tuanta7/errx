@@ -8,6 +8,7 @@ import (
 
 	"github.com/tuanta7/errx"
 	"github.com/tuanta7/errx/parsers"
+	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 )
 
@@ -65,7 +66,7 @@ func (e *Registry) RegisterMessage(code, language, message string) {
 	e.MessageMap[code][language] = message
 }
 
-func (e *Registry) GetMessage(ex *errx.Error, language string) string {
+func (e *Registry) GetMessage(ex *errx.Error, lang string) string {
 	if ex == nil {
 		return DefaultMessage
 	}
@@ -80,10 +81,23 @@ func (e *Registry) GetMessage(ex *errx.Error, language string) string {
 		return getErrorMessage(ex)
 	}
 
-	if localized, ok := messages[language]; ok {
+	// 1. Exact tag match.
+	if localized, ok := messages[lang]; ok {
 		return localized
 	}
 
+	// 2. Base language fallback (e.g. "en-US" → "en").
+	if tag, err := language.Parse(lang); err == nil {
+		base, _ := tag.Base()
+		baseStr := base.String()
+		if baseStr != lang {
+			if localized, ok := messages[baseStr]; ok {
+				return localized
+			}
+		}
+	}
+
+	// 3. error's built-in Message() if non-empty, 4. DefaultMessage.
 	return getErrorMessage(ex)
 }
 
